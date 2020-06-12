@@ -16,5 +16,5 @@ public class LogMethodParamAspect {
 				System.out.print("Method Name:" + pjp.getSignature().getName() + " AND " + "Arg: " + signatureArg);
 			}
 
-		}
 	}
+}

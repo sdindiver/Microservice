@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -23,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.front.DTO.ColorDTO;
 import com.front.aspects.LogMethodParam;
+import com.front.filter.RequestIdThreadLocal;
 import com.front.modal.Data;
 import com.front.services.ColorService;
 
@@ -42,14 +42,22 @@ public class FrontMainController {
 
 	@RequestMapping(value = "/concatenate", consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}, method = RequestMethod.POST)
 	public ResponseEntity<Object> getAccumlatedResult(@RequestBody Data data) throws JsonProcessingException {
-		String response1 = restTemplate.exchange("http://hello-service/hello", HttpMethod.GET, null, new ParameterizedTypeReference<String>() {
-		}, "").getBody();
+		/*
+		 * String response1 = restTemplate.exchange("http://hello-service/hello",
+		 * HttpMethod.GET, null, new ParameterizedTypeReference<String>() { },
+		 * "").getBody();
+		 */
 		
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("requestId", RequestIdThreadLocal.getThreadLocal().get());
+		HttpEntity<String> entity = new HttpEntity<String>("", headers);
+
+		String response1 = restTemplate.exchange("http://hello-service/hello", HttpMethod.GET, entity,String.class).getBody();
+
 		ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 		String json = ow.writeValueAsString(data);
-		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<String> entity = new HttpEntity<String>(json.toString(), headers);
+		entity = new HttpEntity<String>(json.toString(), headers);
 
 		try {
 			String response2 = restTemplate.exchange("http://concatenate-service/concatenate", HttpMethod.POST, entity,String.class).getBody();
